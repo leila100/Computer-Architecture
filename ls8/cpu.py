@@ -76,18 +76,17 @@ class CPU:
         while running:
             IR = f'{self.ram_read(self.pc):08b}'
             print(f"IR: {IR}")
-            opcode = IR[:2]
+            if IR == '00000001': # HLT
+                running = False
+            opcode = int(IR[:2], 2)
             alu = IR[2]
             if alu != '1': # not an alu operation
                 if IR == '10000010': # LDI
                     register = self.ram_read(self.pc + 1)
                     immediate = self.ram_read(self.pc + 2)
                     self.reg[register] = immediate
-                    self.pc += 3
                 elif IR == '01000111': # PRN
                     register = self.ram_read(self.pc + 1)
                     value = self.reg[register]
                     print(value)
-                    self.pc += 2
-            if IR == '00000001': # HLT
-                running = False
+            self.pc += opcode + 1
