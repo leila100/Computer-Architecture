@@ -36,7 +36,8 @@ class CPU:
         ]
 
         for instruction in program:
-            self.ram[address] = instruction
+            # self.ram[address] = instruction
+            self.ram_write(instruction, address)
             address += 1
 
 
@@ -71,4 +72,22 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        running = True
+        while running:
+            IR = f'{self.ram_read(self.pc):08b}'
+            print(f"IR: {IR}")
+            opcode = IR[:2]
+            alu = IR[2]
+            if alu != '1': # not an alu operation
+                if IR == '10000010': # LDI
+                    register = self.ram_read(self.pc + 1)
+                    immediate = self.ram_read(self.pc + 2)
+                    self.reg[register] = immediate
+                    self.pc += 3
+                elif IR == '01000111': # PRN
+                    register = self.ram_read(self.pc + 1)
+                    value = self.reg[register]
+                    print(value)
+                    self.pc += 2
+            if IR == '00000001': # HLT
+                running = False
