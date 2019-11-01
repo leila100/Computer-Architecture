@@ -2,9 +2,11 @@
 
 import sys
 
-LDI = "0010"
-PRN = "0111"
-HLT = "0001"
+LDI  = "0010"
+PRN  = "0111"
+HLT  = "0001"
+ADD  = "0000"
+MULT = "0010"
 
 class CPU:
     """Main CPU class."""
@@ -45,10 +47,10 @@ class CPU:
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
-
-        if op == "ADD":
+        if op == ADD:
             self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
+        elif op == MULT:
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -91,7 +93,7 @@ class CPU:
             if instruction == HLT:
                 running = False
                 return
-            if alu != '1': # not an alu operation
+            if alu != 1: # not an ALU operation
                 if instruction == LDI: 
                     register = self.ram_read(self.pc + 1)
                     immediate = self.ram_read(self.pc + 2)
@@ -100,4 +102,8 @@ class CPU:
                     register = self.ram_read(self.pc + 1)
                     value = self.reg[register]
                     print(value)
+            elif alu == 1: # ALU operation
+                register1 = self.ram_read(self.pc + 1)
+                register2 = self.ram_read(self.pc + 2)
+                self.alu(instruction, register1, register2)
             self.pc += num_operands + 1
