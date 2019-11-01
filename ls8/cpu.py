@@ -78,7 +78,9 @@ class CPU:
             print(f"IR: {IR}")
             if IR == '00000001': # HLT
                 running = False
-            opcode = int(IR[:2], 2)
+            IR_int = int(IR, 2)
+            num_operands = IR_int >> 6
+            print(f"number of operands: {num_operands}")
             alu = IR[2]
             if alu != '1': # not an alu operation
                 if IR == '10000010': # LDI
@@ -89,4 +91,4 @@ class CPU:
                     register = self.ram_read(self.pc + 1)
                     value = self.reg[register]
                     print(value)
-            self.pc += opcode + 1
+            self.pc += num_operands + 1
