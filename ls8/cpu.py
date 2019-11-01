@@ -23,26 +23,24 @@ class CPU:
         self.ram[MAR] = MDR
 
     def load(self):
-        """Load a program into memory."""
+        """Load a program into memory from a file."""
 
-        address = 0
+        if len(sys.argv) < 2:
+            print('Please provide file name')
+        try:
+            with open(sys.argv[1]) as file:
+                address = 0
+                for line in file:
+                    split_line = line.split('#')
+                    command = split_line[0]
+                    command = command.strip(" \n")
+                    if len(command) > 0:
+                        if command[0] == '1' or command[0] == '0':
+                            self.ram_write(int(command, 2), address)
+                            address += 1
 
-        # For now, we've just hardcoded a program:
-
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
-
-        for instruction in program:
-            # self.ram[address] = instruction
-            self.ram_write(instruction, address)
-            address += 1
+        except FileNotFoundError:
+            print('Sorry file does not exist')
 
 
     def alu(self, op, reg_a, reg_b):
@@ -78,20 +76,18 @@ class CPU:
         """Run the CPU."""
         running = True
         while running:
+            self.trace()            
+
             IR = f'{self.ram_read(self.pc):08b}'
-            print(f"IR: {IR}")
             IR_int = int(IR, 2)
             # get the number of operands by shifting IR 6 positions
             num_operands = IR_int >> 6
-            print(f"number of operands: {num_operands}")
             # get the ALU flag by masking and shifting 5 positions
             mask = "00100000"
             alu = (int(IR, 2) & int(mask, 2)) >> 5
-            print(f"alu: {alu}")
             # get the Instruction identifier by masking the last 4 bites
             mask = "00001111"
             instruction = f"{int(IR, 2) & int(mask, 2):04b}"
-            print(f"instruction: {instruction}")
             if instruction == HLT:
                 running = False
                 return
