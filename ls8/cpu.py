@@ -2,6 +2,10 @@
 
 import sys
 
+LDI = "0010"
+PRN = "0111"
+HLT = "0001"
+
 class CPU:
     """Main CPU class."""
 
@@ -76,8 +80,6 @@ class CPU:
         while running:
             IR = f'{self.ram_read(self.pc):08b}'
             print(f"IR: {IR}")
-            if IR == '00000001': # HLT
-                running = False
             IR_int = int(IR, 2)
             # get the number of operands by shifting IR 6 positions
             num_operands = IR_int >> 6
@@ -86,12 +88,19 @@ class CPU:
             mask = "00100000"
             alu = (int(IR, 2) & int(mask, 2)) >> 5
             print(f"alu: {alu}")
+            # get the Instruction identifier by masking the last 4 bites
+            mask = "00001111"
+            instruction = f"{int(IR, 2) & int(mask, 2):04b}"
+            print(f"instruction: {instruction}")
+            if instruction == HLT:
+                running = False
+                return
             if alu != '1': # not an alu operation
-                if IR == '10000010': # LDI
+                if instruction == LDI: 
                     register = self.ram_read(self.pc + 1)
                     immediate = self.ram_read(self.pc + 2)
                     self.reg[register] = immediate
-                elif IR == '01000111': # PRN
+                elif instruction == PRN:
                     register = self.ram_read(self.pc + 1)
                     value = self.reg[register]
                     print(value)
