@@ -79,9 +79,13 @@ class CPU:
             if IR == '00000001': # HLT
                 running = False
             IR_int = int(IR, 2)
+            # get the number of operands by shifting IR 6 positions
             num_operands = IR_int >> 6
             print(f"number of operands: {num_operands}")
-            alu = IR[2]
+            # get the ALU flag by masking and shifting 5 positions
+            mask = "00100000"
+            alu = (int(IR, 2) & int(mask, 2)) >> 5
+            print(f"alu: {alu}")
             if alu != '1': # not an alu operation
                 if IR == '10000010': # LDI
                     register = self.ram_read(self.pc + 1)
