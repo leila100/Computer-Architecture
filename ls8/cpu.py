@@ -16,6 +16,16 @@ class CPU:
         self.ram = [0] * 255
         self.reg = [0] * 8
         self.pc = 0
+        self.branchtable = {}
+        self.branchtable[LDI] = self.handle_LDI
+        self.branchtable[PRN] = self.handle_PRN
+
+    def handle_LDI(self, register, immediate):
+        self.reg[register] = immediate
+    
+    def handle_PRN(self, register):
+        value = self.reg[register]
+        print(value)
 
     def ram_read(self, MAR):
         MDR = self.ram[MAR]
@@ -94,14 +104,15 @@ class CPU:
                 running = False
                 return
             if alu != 1: # not an ALU operation
-                if instruction == LDI: 
+                if num_operands == 0:
+                    self.branchtable[instruction]()
+                if num_operands == 1:
+                    register = self.ram_read(self.pc + 1)
+                    self.branchtable[instruction](register)
+                if num_operands == 2:
                     register = self.ram_read(self.pc + 1)
                     immediate = self.ram_read(self.pc + 2)
-                    self.reg[register] = immediate
-                elif instruction == PRN:
-                    register = self.ram_read(self.pc + 1)
-                    value = self.reg[register]
-                    print(value)
+                    self.branchtable[instruction](register, immediate)
             elif alu == 1: # ALU operation
                 register1 = self.ram_read(self.pc + 1)
                 register2 = self.ram_read(self.pc + 2)
