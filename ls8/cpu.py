@@ -77,16 +77,12 @@ class CPU:
         # bitwise-AND the result with 0xFF (255) to keep the register values between 0-255.
         if op == ADD:
             result = self.reg[reg_a] + self.reg[reg_b]
-            mask = "11111111"
-            self.reg[reg_a] = f"{result & int(mask, 2)}"
-            # self.reg[reg_a] += self.reg[reg_b]
         elif op == MULT:
             result = self.reg[reg_a] * self.reg[reg_b]
-            mask = "11111111"
-            self.reg[reg_a] = f"{result & int(mask, 2)}"
-            # self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
+        mask = "11111111"
+        self.reg[reg_a] = f"{result & int(mask, 2)}"
 
     def trace(self):
         """
