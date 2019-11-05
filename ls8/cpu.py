@@ -7,6 +7,7 @@ PRN  = "0111"
 HLT  = "0001"
 ADD  = "0000"
 MULT = "0010"
+PUSH = "0101"
 
 class CPU:
     """Main CPU class."""
@@ -16,9 +17,11 @@ class CPU:
         self.ram = [0] * 255
         self.reg = [0] * 8
         self.pc = 0
+        self.reg[7] = 0xF4
         self.branchtable = {}
-        self.branchtable[LDI] = self.handle_LDI
-        self.branchtable[PRN] = self.handle_PRN
+        self.branchtable[LDI]  = self.handle_LDI
+        self.branchtable[PRN]  = self.handle_PRN
+        self.branchtable[PUSH] = self.handle_PUSH
 
     def handle_LDI(self, register, immediate):
         self.reg[register] = immediate
@@ -26,6 +29,12 @@ class CPU:
     def handle_PRN(self, register):
         value = self.reg[register]
         print(value)
+
+    def handle_PUSH(self, register):
+        value = self.reg[register]
+        self.reg[7] -= 1
+        sp = self.reg[7]
+        self.ram_write(sp, value)
 
     def ram_read(self, MAR):
         MDR = self.ram[MAR]
