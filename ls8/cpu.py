@@ -9,6 +9,8 @@ ADD  = "0000"
 MULT = "0010"
 PUSH = "0101"
 POP  = "0110"
+CALL = "0000"
+RET  = "0001"
 
 class CPU:
     """Main CPU class."""
@@ -115,24 +117,49 @@ class CPU:
             # get the number of operands by shifting IR 6 positions
             num_operands = IR_int >> 6
             # get the ALU flag by masking and shifting 5 positions
-            mask = "00100000"
-            alu = (int(IR, 2) & int(mask, 2)) >> 5
+            alu_mask = "00100000"
+            alu = (int(IR, 2) & int(alu_mask, 2)) >> 5
+            # get the PC flag by masking and shifting 4 positions
+            pc_mask = "00010000"
+            pc_set = (int(IR, 2) & int(pc_mask, 2)) >> 4
             # get the Instruction identifier by masking the last 4 bites
             mask = "00001111"
             instruction = f"{int(IR, 2) & int(mask, 2):04b}"
-            if instruction == HLT:
-                running = False
-                return
+            
             if alu != 1: # not an ALU operation
-                if num_operands == 0:
-                    self.branchtable[instruction]()
-                if num_operands == 1:
-                    register = self.ram_read(self.pc + 1)
-                    self.branchtable[instruction](register)
-                if num_operands == 2:
-                    register = self.ram_read(self.pc + 1)
-                    immediate = self.ram_read(self.pc + 2)
-                    self.branchtable[instruction](register, immediate)
+                if pc_set == 0:
+                    if instruction == HLT:
+                        running = False
+                        return
+                    if num_operands == 0:
+                        self.branchtable[instruction]()
+                    if num_operands == 1:
+                        register = self.ram_read(self.pc + 1)
+                        self.branchtable[instruction](register)
+                    if num_operands == 2:
+                        register = self.ram_read(self.pc + 1)
+                        immediate = self.ram_read(self.pc + 2)
+                        self.branchtable[instruction](register, immediate)
+                elif pc_set == 1:
+                    if instruction == CALL:
+                        # save next instruction to the stack
+                        self.reg[7] -= 1
+                        sp = self.reg[7]
+                        return_location = self.pc + 2
+                        self.ram_write(return_location, sp)
+
+                        # set pc to the address in register
+                        register = self.ram_read(self.pc + 1)
+                        self.pc = self.reg[register]
+                        continue
+
+                    elif instruction == RET:
+                        # pop return location from stack
+                        sp = self.reg[7]
+                        return_location = self.ram_read(sp)
+                        self.pc = return_location
+                        continue
+
             elif alu == 1: # ALU operation
                 register1 = self.ram_read(self.pc + 1)
                 register2 = self.ram_read(self.pc + 2)
