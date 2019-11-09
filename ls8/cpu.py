@@ -14,6 +14,7 @@ RET  = 0b00010001
 CMP  = 0b10100111
 JMP  = 0b01010100
 JEQ  = 0b01010101
+JNE  = 0b01010110
 
 class CPU:
     """Main CPU class."""
@@ -38,7 +39,8 @@ class CPU:
             RET: self.handle_RET,
             CMP: self.handle_CMP,
             JMP: self.handle_JMP,
-            JEQ: self.handle_JEQ
+            JEQ: self.handle_JEQ,
+            JNE: self.handle_JNE
         }
     def handle_HLT(self, registera, registerb):
         self.running = False
@@ -95,11 +97,25 @@ class CPU:
         value1 = self.reg[register_a]
         value2 = self.reg[register_b]
         if value1 == value2:
-            self.fl = 0b00000001 # set the E flag to 1
-        elif value1 < value2:
-            self.fl = 0b00000100 # set the L flag to 1
-        else: # if value1 > value2
-            self.fl = 0b00000010 # set the G flag to 1
+            mask = 0b00000001
+            self.fl = self.fl | mask # set the E flag to 1
+        else:
+            mask = 0b11111110
+            self.fl = self.fl & mask # set the E flag to 0
+        
+        if value1 < value2:
+            mask = 0b00000100
+            self.fl = self.fl | mask # set the L flag to 1
+        else:
+            mask = 0b11111011
+            self.fl = self.fl & mask # set the L flag to 0
+
+        if value1 > value2:
+            mask = 0b00000010
+            self.fl = self.fl | mask # set the G flag to 1
+        else:
+            mask = 0b11111101
+            self.fl = self.fl & mask # set the G flag to 0
     
     def handle_JMP(self, register_a, register_b):
         '''
@@ -113,8 +129,23 @@ class CPU:
         '''
         If equal flag is set (true), jump to the address stored in the given register.
         '''
-        if self.fl ==  0b00000001:
+        mask = 0b00000001
+        E_flag = mask & self.fl
+        if E_flag == 1:
             self.handle_JMP(register_a, register_b)
+        else:
+            self.pc += 2
+
+    def handle_JNE(self, register_a, register_b):
+        '''
+        If E flag is clear (false, 0), jump to the address stored in the given register.
+        '''
+        mask = 0b00000001
+        E_flag = mask & self.fl
+        if E_flag == 0:
+            self.handle_JMP(register_a, register_b)
+        else:
+            self.pc += 2
 
     def ram_read(self, MAR):
         MDR = self.ram[MAR]
@@ -179,8 +210,8 @@ class CPU:
         while self.running:
             IR = self.ram_read(self.pc)
             num_operands = IR >> 6
-            pc_mask = "00010000"
-            pc_set = (IR & int(pc_mask, 2)) >> 4
+            pc_mask = 0b00010000
+            pc_set = (IR & pc_mask) >> 4
 
             if IR in self.branchtable:
                 operand_a = self.ram_read(self.pc + 1)
@@ -188,3 +219,5 @@ class CPU:
                 self.branchtable[IR](operand_a, operand_b)
                 if pc_set != 1:
                     self.pc += num_operands + 1
+            else:
+                print("Instruction not valid")
