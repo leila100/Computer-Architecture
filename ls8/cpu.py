@@ -13,6 +13,7 @@ CALL = 0b01010000
 RET  = 0b00010001
 CMP  = 0b10100111
 JMP  = 0b01010100
+JEQ  = 0b01010101
 
 class CPU:
     """Main CPU class."""
@@ -36,7 +37,8 @@ class CPU:
             CALL: self.handle_CALL,
             RET: self.handle_RET,
             CMP: self.handle_CMP,
-            JMP: self.handle_JMP
+            JMP: self.handle_JMP,
+            JEQ: self.handle_JEQ
         }
     def handle_HLT(self, registera, registerb):
         self.running = False
@@ -106,6 +108,13 @@ class CPU:
         '''
         jump_to_address = self.reg[register_a]
         self.pc = jump_to_address
+
+    def handle_JEQ(self, register_a, register_b):
+        '''
+        If equal flag is set (true), jump to the address stored in the given register.
+        '''
+        if self.fl ==  0b00000001:
+            self.handle_JMP(register_a, register_b)
 
     def ram_read(self, MAR):
         MDR = self.ram[MAR]
