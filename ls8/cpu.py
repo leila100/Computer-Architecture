@@ -11,6 +11,7 @@ PUSH = 0b01000101
 POP  = 0b01000110
 CALL = 0b01010000
 RET  = 0b00010001
+CMP  = 0b10100111
 
 class CPU:
     """Main CPU class."""
@@ -22,6 +23,7 @@ class CPU:
         self.reg = [0] * 8
         self.pc = 0
         self.reg[7] = 0xF4
+        self.fl = 0b00000000 # 0b00000LGE
         self.branchtable = {
             HLT: self.handle_HLT,
             LDI: self.handle_LDI,
@@ -31,7 +33,8 @@ class CPU:
             PUSH: self.handle_PUSH,
             POP: self.handle_POP,
             CALL: self.handle_CALL,
-            RET: self.handle_RET
+            RET: self.handle_RET,
+            CMP: self.handle_CMP
         }
     def handle_HLT(self, registera, registerb):
         self.running = False
@@ -77,6 +80,22 @@ class CPU:
         sp = self.reg[7]
         return_location = self.ram_read(sp)
         self.pc = return_location
+
+    def handle_CMP(self, register_a, register_b):
+        '''
+        Compare the values in two registers.
+        If they are equal, set the Equal E flag to 1, otherwise set it to 0.
+        If registerA is less than registerB, set the Less-than L flag to 1, otherwise set it to 0.
+        If registerA is greater than registerB, set the Greater-than G flag to 1, otherwise set it to 0.
+        '''
+        value1 = self.reg[register_a]
+        value2 = self.reg[register_b]
+        if value1 == value2:
+            self.fl = 0b00000001 # set the E flag to 1
+        elif value1 < value2:
+            self.fl = 0b00000100 # set the L flag to 1
+        else: # if value1 > value2
+            self.fl = 0b00000010 # set the G flag to 1
 
     def ram_read(self, MAR):
         MDR = self.ram[MAR]
