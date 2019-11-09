@@ -21,6 +21,7 @@ XOR  = 0b10101011
 NOT  = 0b01101001
 SHL  = 0b10101100
 SHR  = 0b10101101
+MOD  = 0b10100100
 
 class CPU:
     """Main CPU class."""
@@ -52,7 +53,8 @@ class CPU:
             XOR: self.handle_XOR,
             NOT: self.handle_NOT,
             SHL: self.handle_SHL,
-            SHR: self.handle_SHR
+            SHR: self.handle_SHR,
+            MOD: self.handle_MOD
         }
     def handle_HLT(self, registera, registerb):
         self.running = False
@@ -194,6 +196,14 @@ class CPU:
         Shift the value in registerA right by the number of bits specified in registerB, filling the high bits with 0.
         '''
         self.alu(SHR, register_a, register_b)
+    
+    def handle_MOD(self, register_a, register_b):
+        '''
+        Divide the value in the first register by the value in the second, 
+        storing the remainder of the result in registerA.
+        If the value in the second register is 0, the system should print an error message and halt.
+        '''
+        self.alu(MOD, register_a, register_b)
 
     def ram_read(self, MAR):
         MDR = self.ram[MAR]
@@ -242,10 +252,15 @@ class CPU:
             shift_value = self.reg[reg_b]
             self.reg[reg_a] = self.reg[reg_a] << shift_value
         elif op == SHR:
-            print(f"before {self.reg[reg_a]:08b}")
             shift_value = self.reg[reg_b]
             self.reg[reg_a] = self.reg[reg_a] >> shift_value
-            print(f"after {self.reg[reg_a]:08b}")
+        elif op == MOD:
+            value1 = self.reg[reg_a]
+            value2 = self.reg[reg_b]
+            if value2 == 0:
+                self.handle_HLT(reg_a, reg_b)
+            else:
+                self.reg[reg_a] = value1 % value2
         else:
             raise Exception("Unsupported ALU operation")
 
