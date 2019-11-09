@@ -19,6 +19,7 @@ AND  = 0b10101000
 OR   = 0b10101010
 XOR  = 0b10101011
 NOT  = 0b01101001
+SHL  = 0b10101100
 
 class CPU:
     """Main CPU class."""
@@ -48,7 +49,8 @@ class CPU:
             AND: self.handle_AND,
             OR: self.handle_OR,
             XOR: self.handle_XOR,
-            NOT: self.handle_NOT
+            NOT: self.handle_NOT,
+            SHL: self.handle_SHL
         }
     def handle_HLT(self, registera, registerb):
         self.running = False
@@ -178,6 +180,12 @@ class CPU:
         Perform a bitwise-NOT on the value in a register.
         '''
         self.alu(NOT, register_a, register_b)
+    
+    def handle_SHL(self, register_a, register_b):
+        '''
+        Shift the value in registerA left by the number of bits specified in registerB, filling the low bits with 0.
+        '''
+        self.alu(SHL, register_a, register_b)
 
     def ram_read(self, MAR):
         MDR = self.ram[MAR]
@@ -222,6 +230,9 @@ class CPU:
             self.reg[reg_a] = self.reg[reg_a] ^ self.reg[reg_b]
         elif op == NOT:
             self.reg[reg_a] = ~self.reg[reg_a]
+        elif op == SHL:
+            shift_value = self.reg[reg_b]
+            self.reg[reg_a] = self.reg[reg_a] << shift_value
         else:
             raise Exception("Unsupported ALU operation")
 
