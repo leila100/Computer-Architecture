@@ -12,6 +12,7 @@ POP  = 0b01000110
 CALL = 0b01010000
 RET  = 0b00010001
 CMP  = 0b10100111
+JMP  = 0b01010100
 
 class CPU:
     """Main CPU class."""
@@ -34,7 +35,8 @@ class CPU:
             POP: self.handle_POP,
             CALL: self.handle_CALL,
             RET: self.handle_RET,
-            CMP: self.handle_CMP
+            CMP: self.handle_CMP,
+            JMP: self.handle_JMP
         }
     def handle_HLT(self, registera, registerb):
         self.running = False
@@ -96,6 +98,14 @@ class CPU:
             self.fl = 0b00000100 # set the L flag to 1
         else: # if value1 > value2
             self.fl = 0b00000010 # set the G flag to 1
+    
+    def handle_JMP(self, register_a, register_b):
+        '''
+        Jump to the address stored in the given register.
+        Set the PC to the address stored in the given register.
+        '''
+        jump_to_address = self.reg[register_a]
+        self.pc = jump_to_address
 
     def ram_read(self, MAR):
         MDR = self.ram[MAR]
@@ -128,14 +138,12 @@ class CPU:
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
         if op == ADD:
-            result = self.reg[reg_a] + self.reg[reg_b]
+            # result = self.reg[reg_a] + self.reg[reg_b]
+            self.reg[reg_a] += self.reg[reg_b]
         elif op == MUL:
-            result = self.reg[reg_a] * self.reg[reg_b]
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
-        # bitwise-AND the result with 0xFF (255) to keep the register values between 0-255.
-        mask = "11111111"
-        self.reg[reg_a] = f"{result & int(mask, 2)}"
 
     def trace(self):
         """
