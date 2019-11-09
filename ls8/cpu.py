@@ -2,49 +2,81 @@
 
 import sys
 
-LDI  = "0010"
-PRN  = "0111"
-HLT  = "0001"
-ADD  = "0000"
-MULT = "0010"
-PUSH = "0101"
-POP  = "0110"
-CALL = "0000"
-RET  = "0001"
+LDI  = 0b10000010
+PRN  = 0b01000111
+HLT  = 0b00000001 
+ADD  = 0b10100000
+MUL  = 0b10100010
+PUSH = 0b01000101
+POP  = 0b01000110
+CALL = 0b01010000
+RET  = 0b00010001
 
 class CPU:
     """Main CPU class."""
 
     def __init__(self):
         """Construct a new CPU."""
-        self.ram = [0] * 255
+        self.running = True
+        self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
         self.reg[7] = 0xF4
-        self.branchtable = {}
-        self.branchtable[LDI]  = self.handle_LDI
-        self.branchtable[PRN]  = self.handle_PRN
-        self.branchtable[PUSH] = self.handle_PUSH
-        self.branchtable[POP] = self.handle_POP
+        self.branchtable = {
+            HLT: self.handle_HLT,
+            LDI: self.handle_LDI,
+            PRN: self.handle_PRN,
+            ADD: self.handle_ADD,
+            MUL: self.handle_MUL,
+            PUSH: self.handle_PUSH,
+            POP: self.handle_POP,
+            CALL: self.handle_CALL,
+            RET: self.handle_RET
+        }
+    def handle_HLT(self, registera, registerb):
+        self.running = False
 
     def handle_LDI(self, register, immediate):
         self.reg[register] = immediate
     
-    def handle_PRN(self, register):
-        value = self.reg[register]
+    def handle_PRN(self, register_a, register_b):
+        value = self.reg[register_a]
         print(value)
+    
+    def handle_ADD(self, register_a, register_b):
+        self.alu(ADD, register_a, register_b)
+    
+    def handle_MUL(self, register_a, register_b):
+        self.alu(MUL, register_a, register_b)
 
-    def handle_PUSH(self, register):
-        value = self.reg[register]
+    def handle_PUSH(self, register_a, register_b):
+        value = self.reg[register_a]
         self.reg[7] -= 1
         sp = self.reg[7]
         self.ram_write(value, sp)
     
-    def handle_POP(self, Register):
+    def handle_POP(self, register_a, register_b):
         sp = self.reg[7]
         value = self.ram_read(sp)
-        self.reg[Register] = value
+        self.reg[register_a] = value
         self.reg[7] += 1
+    
+    def handle_CALL(self, register_a, register_b):
+        # save next instruction to the stack
+        self.reg[7] -= 1
+        sp = self.reg[7]
+        return_location = self.pc + 2
+        self.ram_write(return_location, sp)
+
+        # set pc to the address in register
+        register = self.ram_read(self.pc + 1)
+        self.pc = self.reg[register]
+    
+    def handle_RET(self, register_a, register_b):
+        # pop return location from stack
+        sp = self.reg[7]
+        return_location = self.ram_read(sp)
+        self.pc = return_location
 
     def ram_read(self, MAR):
         MDR = self.ram[MAR]
@@ -76,13 +108,13 @@ class CPU:
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
-        # bitwise-AND the result with 0xFF (255) to keep the register values between 0-255.
         if op == ADD:
             result = self.reg[reg_a] + self.reg[reg_b]
-        elif op == MULT:
+        elif op == MUL:
             result = self.reg[reg_a] * self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
+        # bitwise-AND the result with 0xFF (255) to keep the register values between 0-255.
         mask = "11111111"
         self.reg[reg_a] = f"{result & int(mask, 2)}"
 
@@ -108,60 +140,15 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        running = True
-        while running:
-            # self.trace()            
-
-            IR = f'{self.ram_read(self.pc):08b}'
-            IR_int = int(IR, 2)
-            # get the number of operands by shifting IR 6 positions
-            num_operands = IR_int >> 6
-            # get the ALU flag by masking and shifting 5 positions
-            alu_mask = "00100000"
-            alu = (int(IR, 2) & int(alu_mask, 2)) >> 5
-            # get the PC flag by masking and shifting 4 positions
+        while self.running:
+            IR = self.ram_read(self.pc)
+            num_operands = IR >> 6
             pc_mask = "00010000"
-            pc_set = (int(IR, 2) & int(pc_mask, 2)) >> 4
-            # get the Instruction identifier by masking the last 4 bites
-            mask = "00001111"
-            instruction = f"{int(IR, 2) & int(mask, 2):04b}"
-            
-            if alu != 1: # not an ALU operation
-                if pc_set == 0:
-                    if instruction == HLT:
-                        running = False
-                        return
-                    if num_operands == 0:
-                        self.branchtable[instruction]()
-                    if num_operands == 1:
-                        register = self.ram_read(self.pc + 1)
-                        self.branchtable[instruction](register)
-                    if num_operands == 2:
-                        register = self.ram_read(self.pc + 1)
-                        immediate = self.ram_read(self.pc + 2)
-                        self.branchtable[instruction](register, immediate)
-                elif pc_set == 1:
-                    if instruction == CALL:
-                        # save next instruction to the stack
-                        self.reg[7] -= 1
-                        sp = self.reg[7]
-                        return_location = self.pc + 2
-                        self.ram_write(return_location, sp)
+            pc_set = (IR & int(pc_mask, 2)) >> 4
 
-                        # set pc to the address in register
-                        register = self.ram_read(self.pc + 1)
-                        self.pc = self.reg[register]
-                        continue
-
-                    elif instruction == RET:
-                        # pop return location from stack
-                        sp = self.reg[7]
-                        return_location = self.ram_read(sp)
-                        self.pc = return_location
-                        continue
-
-            elif alu == 1: # ALU operation
-                register1 = self.ram_read(self.pc + 1)
-                register2 = self.ram_read(self.pc + 2)
-                self.alu(instruction, register1, register2)
-            self.pc += num_operands + 1
+            if IR in self.branchtable:
+                operand_a = self.ram_read(self.pc + 1)
+                operand_b = self.ram_read(self.pc + 2)
+                self.branchtable[IR](operand_a, operand_b)
+                if pc_set != 1:
+                    self.pc += num_operands + 1
