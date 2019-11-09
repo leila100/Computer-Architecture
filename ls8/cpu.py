@@ -18,6 +18,7 @@ JNE  = 0b01010110
 AND  = 0b10101000
 OR   = 0b10101010
 XOR  = 0b10101011
+NOT  = 0b01101001
 
 class CPU:
     """Main CPU class."""
@@ -46,7 +47,8 @@ class CPU:
             JNE: self.handle_JNE,
             AND: self.handle_AND,
             OR: self.handle_OR,
-            XOR: self.handle_XOR
+            XOR: self.handle_XOR,
+            NOT: self.handle_NOT
         }
     def handle_HLT(self, registera, registerb):
         self.running = False
@@ -171,6 +173,12 @@ class CPU:
         '''
         self.alu(XOR, register_a, register_b)
 
+    def handle_NOT(self, register_a, register_b):
+        '''
+        Perform a bitwise-NOT on the value in a register.
+        '''
+        self.alu(NOT, register_a, register_b)
+
     def ram_read(self, MAR):
         MDR = self.ram[MAR]
         return MDR
@@ -212,6 +220,8 @@ class CPU:
             self.reg[reg_a] = self.reg[reg_a] | self.reg[reg_b]
         elif op == XOR:
             self.reg[reg_a] = self.reg[reg_a] ^ self.reg[reg_b]
+        elif op == NOT:
+            self.reg[reg_a] = ~self.reg[reg_a]
         else:
             raise Exception("Unsupported ALU operation")
 
