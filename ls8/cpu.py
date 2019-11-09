@@ -22,6 +22,7 @@ NOT  = 0b01101001
 SHL  = 0b10101100
 SHR  = 0b10101101
 MOD  = 0b10100100
+ADDI = 0b10101111
 
 class CPU:
     """Main CPU class."""
@@ -54,7 +55,8 @@ class CPU:
             NOT: self.handle_NOT,
             SHL: self.handle_SHL,
             SHR: self.handle_SHR,
-            MOD: self.handle_MOD
+            MOD: self.handle_MOD,
+            ADDI: self.handle_ADDI
         }
     def handle_HLT(self, registera, registerb):
         self.running = False
@@ -205,6 +207,12 @@ class CPU:
         '''
         self.alu(MOD, register_a, register_b)
 
+    def handle_ADDI(self, register_a, value):
+        '''
+        add an immediate value to a register
+        '''
+        self.alu(ADDI, register_a, value)
+
     def ram_read(self, MAR):
         MDR = self.ram[MAR]
         return MDR
@@ -258,9 +266,12 @@ class CPU:
             value1 = self.reg[reg_a]
             value2 = self.reg[reg_b]
             if value2 == 0:
+                print("Can not divide by 0")
                 self.handle_HLT(reg_a, reg_b)
             else:
                 self.reg[reg_a] = value1 % value2
+        elif op == ADDI:
+            self.reg[reg_a] += reg_b
         else:
             raise Exception("Unsupported ALU operation")
 
