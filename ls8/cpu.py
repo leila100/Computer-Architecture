@@ -20,6 +20,7 @@ OR   = 0b10101010
 XOR  = 0b10101011
 NOT  = 0b01101001
 SHL  = 0b10101100
+SHR  = 0b10101101
 
 class CPU:
     """Main CPU class."""
@@ -50,7 +51,8 @@ class CPU:
             OR: self.handle_OR,
             XOR: self.handle_XOR,
             NOT: self.handle_NOT,
-            SHL: self.handle_SHL
+            SHL: self.handle_SHL,
+            SHR: self.handle_SHR
         }
     def handle_HLT(self, registera, registerb):
         self.running = False
@@ -187,6 +189,12 @@ class CPU:
         '''
         self.alu(SHL, register_a, register_b)
 
+    def handle_SHR(self, register_a, register_b):
+        '''
+        Shift the value in registerA right by the number of bits specified in registerB, filling the high bits with 0.
+        '''
+        self.alu(SHR, register_a, register_b)
+
     def ram_read(self, MAR):
         MDR = self.ram[MAR]
         return MDR
@@ -233,6 +241,11 @@ class CPU:
         elif op == SHL:
             shift_value = self.reg[reg_b]
             self.reg[reg_a] = self.reg[reg_a] << shift_value
+        elif op == SHR:
+            print(f"before {self.reg[reg_a]:08b}")
+            shift_value = self.reg[reg_b]
+            self.reg[reg_a] = self.reg[reg_a] >> shift_value
+            print(f"after {self.reg[reg_a]:08b}")
         else:
             raise Exception("Unsupported ALU operation")
 
