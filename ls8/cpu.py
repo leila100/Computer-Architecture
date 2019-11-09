@@ -16,6 +16,7 @@ JMP  = 0b01010100
 JEQ  = 0b01010101
 JNE  = 0b01010110
 AND  = 0b10101000
+OR   = 0b10101010
 
 class CPU:
     """Main CPU class."""
@@ -42,7 +43,8 @@ class CPU:
             JMP: self.handle_JMP,
             JEQ: self.handle_JEQ,
             JNE: self.handle_JNE,
-            AND: self.handle_AND
+            AND: self.handle_AND,
+            OR: self.handle_OR
         }
     def handle_HLT(self, registera, registerb):
         self.running = False
@@ -154,6 +156,12 @@ class CPU:
         Bitwise-AND the values in registerA and registerB, then store the result in registerA.
         '''
         self.alu(AND, register_a, register_b)
+    
+    def handle_OR(self, register_a, register_b):
+        '''
+        Perform a bitwise-OR between the values in registerA and registerB, storing the result in registerA.
+        '''
+        self.alu(OR, register_a, register_b)
 
     def ram_read(self, MAR):
         MDR = self.ram[MAR]
@@ -192,6 +200,8 @@ class CPU:
             self.reg[reg_a] *= self.reg[reg_b]
         elif op == AND:
             self.reg[reg_a] = self.reg[reg_a] & self.reg[reg_b]
+        elif op == OR:
+            self.reg[reg_a] = self.reg[reg_a] | self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
